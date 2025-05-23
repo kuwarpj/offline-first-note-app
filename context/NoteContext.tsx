@@ -15,18 +15,18 @@ import { toast } from "sonner";
 interface NotesContextType {
   notes: Note[];
   selectedNoteId: string | null;
+  setSelectedNoteId: string | null;
   searchTerm: string;
   isOnline: boolean;
   isMobile: boolean;
   activeMobileView: "list" | "editor";
-  currentNote: Note | null | undefined; 
+  currentNote: Note | null | undefined;
   setSearchTerm: (term: string) => void;
   handleNewNote: () => void;
   handleSelectNote: (id: string) => void;
   handleSaveNote: (noteToSave: Note) => void;
   handleDeleteNote: (id: string) => void;
-  handleCloseEditorMobile: () => void;
-  setSelectedNoteId: string | null
+  handleCloseEditor: () => void;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -41,6 +41,17 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
   const [activeMobileView, setActiveMobileView] = useState<"list" | "editor">(
     "list"
   );
+  const [currentNote, setCurrentNote] = useState<Note | null | undefined>(null);
+
+  const handleNewNote = () => {
+    // setSelectedNoteId(null);
+    setCurrentNote({
+      title: "",
+      content: "",
+      updatedAt: new Date().toISOString(),
+      syncStatus: "unsynced",
+    });
+  };
 
   const getAllNotes = useCallback(async () => {
     try {
@@ -67,14 +78,13 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
     getAllNotes();
   }, []);
 
-  
   const handleSaveNote = useCallback(async (noteToSave: Note) => {
     console.log("This is note to save", noteToSave);
     try {
       const body = {
         title: noteToSave?.title,
         content: noteToSave?.content,
-        synced:  true,
+        synced: true,
       };
 
       const res = await ApiRequest("/api/v1/note/createnote", "POST", body);
@@ -86,6 +96,8 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         });
 
         getAllNotes();
+        setSelectedNoteId(null);
+        setCurrentNote(null);
       }
     } catch (error) {}
   }, []);
@@ -108,13 +120,21 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
     }
   }, []);
 
-  
-
+  const handleSelectNote = (id: string) => {
+    const selected = notes.find((note) => note.id === id);
+    setSelectedNoteId(id);
+    setCurrentNote(selected || null);
+  };
+  const handleCloseEditor = () => {
+    setSelectedNoteId(null);
+    setCurrentNote(null);
+  };
   return (
     <NotesContext.Provider
       value={{
         notes,
         selectedNoteId,
+        handleCloseEditor,
         searchTerm,
         isOnline,
         isMobile,
@@ -122,6 +142,9 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         setSearchTerm,
         handleSaveNote,
         handleDeleteNote,
+        handleSelectNote,
+        currentNote,
+        handleNewNote
       }}
     >
       {children}

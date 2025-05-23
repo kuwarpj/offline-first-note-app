@@ -1,33 +1,31 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2, Save, Info } from "lucide-react";
+import { Trash2, Save, X, Info } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Note } from "@/types";
 
 interface NoteEditorProps {
-  note: Note | null | undefined; // null for new note, undefined if no note selected
+  note: Note | null | undefined;
   onSaveNote: (note: Note) => void;
   onDeleteNote: (id: string) => void;
-  onCloseEditor?: () => void; // For mobile view to go back
-  isMobileView: boolean;
+  handleCloseEditor?: () => void;
   className?: string;
+  selectedNoteId: string | null;
 }
 
 export function NoteEditor({
   note,
   onSaveNote,
   onDeleteNote,
-  onCloseEditor,
-  isMobileView,
+  handleCloseEditor,
   className,
 }: NoteEditorProps) {
   const [title, setTitle] = useState("");
@@ -35,11 +33,21 @@ export function NoteEditor({
   const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
 
-  
+  useEffect(() => {
+    if (note) {
+      setTitle(note.title || "");
+      setContent(note.content || "");
+      setCurrentNoteId(note.id || null);
+      setLastSaved(note.updatedAt || null);
+    } else {
+      setTitle("");
+      setContent("");
+      setCurrentNoteId(null);
+      setLastSaved(null);
+    }
+  }, [note]);
 
   const handleSave = () => {
-
-    console.log("THis")
     onSaveNote({
       title,
       content,
@@ -53,36 +61,41 @@ export function NoteEditor({
     }
   };
 
-  //   if (note === undefined && !isMobileView) {
-  //     return (
-  //       <div className={`flex-1 p-6 flex flex-col items-center justify-center text-center bg-background ${className}`}>
-  //         <Info className="h-16 w-16 text-primary mb-4" />
-  //         <h2 className="text-2xl font-semibold text-foreground mb-2">No Note Selected</h2>
-  //         <p className="text-muted-foreground">Select a note from the list to view or edit, or create a new one.</p>
-  //       </div>
-  //     );
-  //   }
-
-  //   if (note === undefined && isMobileView) return null; // Don't render editor if no note selected on mobile unless it's a new note flow
+  // Show a fallback UI if no note is selected
+  if (!note) {
+    return (
+      <div
+        className={`flex-1 p-6 flex flex-col items-center justify-center text-center bg-background ${className}`}
+      >
+        <Info className="h-16 w-16 text-primary mb-4" />
+        <h2 className="text-2xl font-semibold text-foreground mb-2">
+          No Note Selected
+        </h2>
+        <p className="text-muted-foreground">
+          Select a note from the list to view or edit, or create a new one.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Card
-      className={`flex flex-col h-full shadow-lg rounded-lg overflow-hidden ${
-        isMobileView ? "w-full" : "flex-1"
-      } ${className}`}
+      className={`flex flex-col h-full shadow-lg rounded-lg overflow-hidden flex-1 ${className}`}
     >
-      <CardHeader className="p-4 border-b">
-        <div className="flex items-center justify-between gap-2">
-          {isMobileView && onCloseEditor && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onCloseEditor}
-              aria-label="Back to list"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          )}
+      <CardHeader className="p-4 border-b relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            handleCloseEditor?.();
+          }}
+          aria-label="Close editor"
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+
+        <div className="flex items-center justify-between gap-2 pr-10">
           <Input
             placeholder="Note Title"
             value={title}
@@ -93,7 +106,7 @@ export function NoteEditor({
             aria-label="Note title"
           />
           <div className="flex items-center gap-2">
-            {note && ( // Only show delete for existing notes, not a brand new one not yet saved
+            {note && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -124,7 +137,7 @@ export function NoteEditor({
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
               setContent(e.target.value)
             }
-            className="h-full w-full resize-none border-0 rounded-none p-4 focus-visible:ring-0 text-base min-h-[calc(100vh-250px)] sm:min-h-[calc(100vh-200px)]"
+            className="h-full w-full resize-none border-0 rounded-none p-4 focus-visible:ring-0 text-base min-h-[calc(100vh-250px)]"
             aria-label="Note content"
           />
         </ScrollArea>

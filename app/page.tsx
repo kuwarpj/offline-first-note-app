@@ -1,12 +1,9 @@
-
 "use client";
 
 import { AppHeader } from "@/components/Header/Header";
 import { NoteEditor } from "@/components/Notes/NoteEditor";
 import { NoteList } from "@/components/Notes/NoteList";
 import { useNotes } from "@/context/NoteContext";
-
-
 
 export default function HomePage() {
   const {
@@ -21,9 +18,9 @@ export default function HomePage() {
     handleSelectNote,
     handleSaveNote,
     handleDeleteNote,
-    handleCloseEditorMobile,
     isMobile, // Now available from context
-    setSelectedNoteId
+
+    handleCloseEditor, 
   } = useNotes();
 
   return (
@@ -36,7 +33,7 @@ export default function HomePage() {
       />
       <main className="flex flex-1 overflow-hidden">
         {isMobile ? (
-          activeMobileView === 'list' ? (
+          activeMobileView === "list" ? (
             <NoteList
               notes={notes}
               selectedNoteId={selectedNoteId}
@@ -46,18 +43,16 @@ export default function HomePage() {
               onSearchChange={setSearchTerm} // Pass setSearchTerm to NoteList for its mobile search bar
               className="w-full h-full"
             />
-          ) : ( 
+          ) : (
             <NoteEditor
-              note={currentNote} 
+              note={currentNote}
               onSaveNote={handleSaveNote}
               onDeleteNote={handleDeleteNote}
-              onCloseEditor={handleCloseEditorMobile}
-              isMobileView={true}
+              selectedNoteId={selectedNoteId}
               className="w-full h-full"
             />
           )
         ) : (
-        
           <>
             <NoteList
               notes={notes}
@@ -65,14 +60,16 @@ export default function HomePage() {
               onSelectNote={handleSelectNote}
               onDeleteNote={handleDeleteNote}
               searchTerm={searchTerm}
-              onSearchChange={setSearchTerm} 
+              onSearchChange={setSearchTerm}
               className="w-1/3 lg:w-1/4 border-r h-full"
             />
             <NoteEditor
-              note={currentNote} 
+              note={currentNote}
               onSaveNote={handleSaveNote}
               onDeleteNote={handleDeleteNote}
-              isMobileView={false}
+              selectedNoteId={selectedNoteId}
+
+              handleCloseEditor={handleCloseEditor}
               className="flex-1 h-full"
             />
           </>
