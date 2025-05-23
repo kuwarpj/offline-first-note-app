@@ -18,18 +18,10 @@ import {
   XCircle,
   Trash2,
 } from "lucide-react";
-
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "../ui/button";
 
-interface NoteListItemProps {
-  note: Note;
-  isSelected: boolean;
-  onSelectNote: (id: string) => void;
-  onDeleteNote: (id: string) => void;
-}
-
-const getStatusProps = (status: Note["syncStatus"]) => {
+const getStatusProps = (status: Note["synced"]) => {
   switch (status) {
     case "synced":
       return {
@@ -74,8 +66,13 @@ export function NoteListItem({
   isSelected,
   onSelectNote,
   onDeleteNote,
-}: NoteListItemProps) {
-  const statusProps = getStatusProps(note.syncStatus);
+}: {
+  note: Note;
+  isSelected: boolean;
+  onSelectNote: (id: string) => void;
+  onDeleteNote: (id: string) => void;
+}) {
+  const statusProps = getStatusProps(note.synced);
 
   const timeAgo = React.useMemo(() => {
     try {
@@ -86,9 +83,6 @@ export function NoteListItem({
       return "Invalid date";
     }
   }, [note.updatedAt]);
-
-  const contentSnippet =
-    note.content.substring(0, 100) + (note.content.length > 100 ? "..." : "");
 
   return (
     <Card
@@ -110,8 +104,8 @@ export function NoteListItem({
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-destructive"
-            onClick={(e: any) => {
-              e.stopPropagation(); // Prevent card click when deleting
+            onClick={(e) => {
+              e.stopPropagation();
               note.id && onDeleteNote(note.id);
             }}
             aria-label={`Delete note ${note.title || "Untitled Note"}`}

@@ -2,6 +2,11 @@
 
 import type { Note } from "@/types";
 import { ApiRequest } from "@/utils/ApiRequest";
+import {
+  clearOfflineNotes,
+  getAllOfflineNotes,
+  saveNoteOffline,
+} from "@/utils/IndexDb";
 import React, {
   createContext,
   useContext,
@@ -15,18 +20,16 @@ import { toast } from "sonner";
 interface NotesContextType {
   notes: Note[];
   selectedNoteId: string | null;
-  setSelectedNoteId: string | null;
+  setSelectedNoteId: (id: string | null) => void;
   searchTerm: string;
   isOnline: boolean;
-  isMobile: boolean;
-  activeMobileView: "list" | "editor";
   currentNote: Note | null | undefined;
   setSearchTerm: (term: string) => void;
   handleNewNote: () => void;
   handleSelectNote: (id: string) => void;
   handleDeleteNote: (id: string) => void;
   handleCloseEditor: () => void;
-  handleSaveOrUpdateNote: any;
+  handleSaveOrUpdateNote: (note: Note) => void;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -37,21 +40,9 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  const [isOnline, setIsOnlineState] = useState<boolean>(true);
-  const [activeMobileView, setActiveMobileView] = useState<"list" | "editor">(
-    "list"
-  );
-  const [currentNote, setCurrentNote] = useState<Note | null | undefined>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
-  const handleNewNote = () => {
-    // setSelectedNoteId(null);
-    setCurrentNote({
-      title: "",
-      content: "",
-      updatedAt: new Date().toISOString(),
-      syncStatus: "unsynced",
-    });
-  };
+  const [currentNote, setCurrentNote] = useState<Note | null | undefined>(null);
 
   const getAllNotes = useCallback(async () => {
     try {
@@ -63,98 +54,283 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
           title: note.title,
           content: note.content,
           updatedAt: note.updatedAt,
-          syncStatus: note.synced ? "synced" : "unsynced",
+          synced: "synced" as const,
         }));
-        setNotes(mappedNotes);
+        
+        // Merge with any existing unsynced notes
+        setNotes(prevNotes => {
+          const unsyncedNotes = prevNotes.filter(n => n.synced !== "synced");
+          return [...mappedNotes, ...unsyncedNotes];
+        });
       }
     } catch (error) {
       console.log(error);
     }
   }, []);
+
+
 
   const isMobile = false; // fallback for now
 
   useEffect(() => {
-    getAllNotes();
-  }, []);
+    const loadInitialData = async () => {
+      
+      const offlineNotes = await getAllOfflineNotes();
+      setNotes(prevNotes => [
+        ...prevNotes,
+        ...offlineNotes.map(note => ({
+          ...note,
+          synced: "unsynced" as const,
+        })),
+      ]);
+      await getAllNotes();
+    };
+    loadInitialData();
+  }, [getAllNotes]);
 
-  const handleSaveOrUpdateNote = useCallback(async (noteToSave: Note) => {
-    try {
-      const body = {
-        title: noteToSave.title,
-        content: noteToSave.content,
-        synced: true,
-      };
+  const handleNewNote = () => {
+    const newNote: Note = {
+      title: "",
+      content: "",
+      updatedAt: new Date().toISOString(),
+      synced: isOnline ? "unsynced" : "unsynced",
+      id: `offline-${Date.now()}`,
+    };
+    setNotes(prev => [newNote, ...prev]);
+    setCurrentNote(newNote);
+    // setSelectedNoteId(newNote.id);
+  };
 
-      let res;
-      if (noteToSave.id) {
-        // Update existing note
-        res = await ApiRequest(`/api/v1/note/${noteToSave.id}`, "PUT", body);
-      } else {
-        // Create new note
-        res = await ApiRequest("/api/v1/note/createnote", "POST", body);
-      }
+  const handleSaveOrUpdateNote = useCallback(
+    async (noteToSave: Note) => {
+      const onlineStatus = navigator.onLine;
+      const tempId = noteToSave.id?.startsWith("offline-") 
+        ? noteToSave.id 
+        : `offline-${Date.now()}`;
 
-      if (res?.statusCode === 200) {
-        toast(noteToSave.id ? "Note Updated" : "Note Created", {
-          description: `Note has been ${
-            noteToSave.id ? "updated" : "created"
-          } successfully.`,
-          duration: 3000,
-          className: "bg-red-500 text-white",
+      // Update UI immediately
+      setNotes(prevNotes => {
+        const updatedNotes = [...prevNotes];
+        const noteIndex = updatedNotes.findIndex(
+          n => n.id === noteToSave.id || n.id === tempId
+        );
+        
+        if (noteIndex !== -1) {
+          updatedNotes[noteIndex] = {
+            ...noteToSave,
+            id: tempId,
+            synced: onlineStatus ? "syncing" : "unsynced",
+            updatedAt: new Date().toISOString(),
+          };
+        } else {
+          updatedNotes.unshift({
+            ...noteToSave,
+            id: tempId,
+            synced: onlineStatus ? "syncing" : "unsynced",
+            updatedAt: new Date().toISOString(),
+          });
+        }
+        return updatedNotes;
+      });
+
+      if (!onlineStatus) {
+        await saveNoteOffline({
+          ...noteToSave,
+          id: tempId,
+          synced: "unsynced",
+          updatedAt: new Date().toISOString(),
         });
-
-        getAllNotes();
-        setSelectedNoteId(null);
-        setCurrentNote(null);
+        toast("Offline", {
+          description: "Note saved offline and will sync later.",
+        });
+        return;
       }
-    } catch (error) {
-      console.error(error);
+
+      try {
+        const body = {
+          title: noteToSave.title,
+          content: noteToSave.content,
+          synced: true
+        };
+
+        const isExistingNote = noteToSave.id && !noteToSave.id.startsWith("offline-");
+        const res = isExistingNote
+          ? await ApiRequest(`/api/v1/note/${noteToSave.id}`, "PUT", body)
+          : await ApiRequest("/api/v1/note/createnote", "POST", body);
+
+        if (res?.statusCode === 200) {
+          setNotes(prevNotes => {
+            const updatedNotes = prevNotes.map(n => 
+              n.id === tempId || n.id === noteToSave.id
+                ? {
+                    ...n,
+                    id: res.data._id || res.data.id,
+                    synced: "synced",
+                    updatedAt: res.data.updatedAt,
+                  }
+                : n
+            );
+            return updatedNotes;
+          });
+
+          toast(isExistingNote ? "Note Updated" : "Note Created", {
+            description: `Note ${isExistingNote ? "updated" : "created"} successfully.`,
+          });
+        }
+      } catch (error) {
+        console.error(error);
+        setNotes(prevNotes =>
+          prevNotes.map(n =>
+            n.id === tempId || n.id === noteToSave.id
+              ? { ...n, synced: "error" }
+              : n
+          )
+        );
+      }
+    },
+    []
+  );
+
+  const syncOfflineNotes = useCallback(async () => {
+    const offlineNotes = await getAllOfflineNotes();
+    
+    // Mark all offline notes as syncing
+    setNotes(prevNotes => {
+      const updatedNotes = [...prevNotes];
+      offlineNotes.forEach(offlineNote => {
+        const existingIndex = updatedNotes.findIndex(
+          n => n.id === offlineNote.id || n.id === `offline-${offlineNote.id?.replace("offline-", "")}`
+        );
+        
+        if (existingIndex !== -1) {
+          updatedNotes[existingIndex] = {
+            ...updatedNotes[existingIndex],
+            synced: "syncing",
+          };
+        }
+      });
+      return updatedNotes;
+    });
+
+    for (const note of offlineNotes) {
+      try {
+        const { title, content } = note;
+        const body = { title, content, synced: true  };
+
+        const isExistingNote = note.id && !note.id.startsWith("offline-");
+        const res = isExistingNote
+          ? await ApiRequest(`/api/v1/note/${note.id}`, "PUT", body)
+          : await ApiRequest("/api/v1/note/createnote", "POST", body);
+
+        if (res?.statusCode === 200) {
+          setNotes(prevNotes =>
+            prevNotes.map(n =>
+              n.id === note.id || n.id === `offline-${note.id?.replace("offline-", "")}`
+                ? {
+                    ...n,
+                    id: res.data._id || res.data.id,
+                    synced: "synced",
+                    updatedAt: res.data.updatedAt,
+                  }
+                : n
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Failed syncing note", err);
+        setNotes(prevNotes =>
+          prevNotes.map(n =>
+            n.id === note.id || n.id === `offline-${note.id?.replace("offline-", "")}`
+              ? { ...n, synced: "error" }
+              : n
+          )
+        );
+      }
+    }
+
+    if (offlineNotes.length > 0) {
+      await clearOfflineNotes();
+      toast("Synced", { description: "Offline notes synced successfully." });
     }
   }, []);
 
-  //function to delete the note
-  const handleDeleteNote = useCallback(async (id: string) => {
-    try {
-      const res = await ApiRequest(`/api/v1/note/${id}`, "DELETE");
+  useEffect(() => {
+    const updateOnlineStatus = () => {
+      const online = navigator.onLine;
+      setIsOnline(online);
+      if (online) {
+        setNotes(prevNotes =>
+          prevNotes.map(note =>
+            note.synced === "unsynced" ? { ...note, synced: "syncing" } : note
+          )
+        );
+        syncOfflineNotes();
+      }
+    };
 
-      if (res?.statusCode === 200) {
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, [syncOfflineNotes]);
+
+  const handleDeleteNote = useCallback(
+    async (id: string) => {
+      try {
+        // Don't try to delete offline-only notes from server
+        if (!id.startsWith("offline-")) {
+          const res = await ApiRequest(`/api/v1/note/${id}`, "DELETE");
+          if (res?.statusCode !== 200) throw new Error("Delete failed");
+        }
+
+        setNotes(prev => prev.filter(note => note.id !== id));
+        if (selectedNoteId === id) {
+          setSelectedNoteId(null);
+          setCurrentNote(null);
+        }
+
         toast("Note Deleted", {
-          description: `"Note has been deleted.`,
+          description: `Note has been deleted.`,
           duration: 3000,
           className: "bg-red-500 text-white",
         });
-        getAllNotes();
+      } catch (error) {
+        console.log(error);
       }
-    } catch (error) {
-      console.log(error);
-    }
-  }, []);
+    },
+    [selectedNoteId]
+  );
 
   const handleSelectNote = (id: string) => {
-    const selected = notes.find((note) => note.id === id);
+    const selected = notes.find(note => note.id === id);
     setSelectedNoteId(id);
     setCurrentNote(selected || null);
+    
   };
+
   const handleCloseEditor = () => {
     setSelectedNoteId(null);
     setCurrentNote(null);
+  
   };
+
   return (
     <NotesContext.Provider
       value={{
         notes,
         selectedNoteId,
-        handleCloseEditor,
+        setSelectedNoteId,
         searchTerm,
         isOnline,
-        isMobile,
-        activeMobileView,
-        setSearchTerm,
-        handleDeleteNote,
-        handleSelectNote,
         currentNote,
+        setSearchTerm,
         handleNewNote,
+        handleSelectNote,
+        handleDeleteNote,
+        handleCloseEditor,
         handleSaveOrUpdateNote,
       }}
     >

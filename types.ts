@@ -3,5 +3,6 @@ export interface Note {
   title: string;
   content: string;
   updatedAt?: string;
-  syncStatus?: "synced" | "unsynced" | "syncing" | "error";
+ synced?: boolean | "synced" | "unsynced" | "syncing" | "error";
+
 }

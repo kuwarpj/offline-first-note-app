@@ -48,7 +48,7 @@ export function NoteEditor({
       id: note?.id,
       title,
       content,
-      syncStatus: note?.syncStatus || "unsynced",
+      synced: note?.synced || "unsynced",
     });
   };
 
