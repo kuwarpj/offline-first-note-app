@@ -1,8 +1,9 @@
+// @ts-ignore
 "use client";
 
 import type { ChangeEvent } from "react";
 import { useEffect, useState } from "react";
-
+import ReactMarkdown from "react-markdown";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -14,51 +15,41 @@ import { Note } from "@/types";
 
 interface NoteEditorProps {
   note: Note | null | undefined;
-  onSaveNote: (note: Note) => void;
-  onDeleteNote: (id: string) => void;
   handleCloseEditor?: () => void;
   className?: string;
   selectedNoteId: string | null;
+  handleSaveOrUpdateNote: any;
 }
-
 export function NoteEditor({
   note,
-  onSaveNote,
-  onDeleteNote,
+
   handleCloseEditor,
   className,
+  handleSaveOrUpdateNote,
 }: NoteEditorProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [currentNoteId, setCurrentNoteId] = useState<string | null>(null);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
 
   useEffect(() => {
     if (note) {
       setTitle(note.title || "");
       setContent(note.content || "");
-      setCurrentNoteId(note.id || null);
       setLastSaved(note.updatedAt || null);
     } else {
       setTitle("");
       setContent("");
-      setCurrentNoteId(null);
       setLastSaved(null);
     }
   }, [note]);
 
   const handleSave = () => {
-    onSaveNote({
+    handleSaveOrUpdateNote({
+      id: note?.id,
       title,
       content,
       syncStatus: note?.syncStatus || "unsynced",
     });
-  };
-
-  const handleDelete = () => {
-    if (currentNoteId) {
-      onDeleteNote(currentNoteId);
-    }
   };
 
   // Show a fallback UI if no note is selected
@@ -106,17 +97,6 @@ export function NoteEditor({
             aria-label="Note title"
           />
           <div className="flex items-center gap-2">
-            {note && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDelete}
-                className="text-destructive hover:text-destructive"
-                aria-label="Delete note"
-              >
-                <Trash2 className="h-5 w-5" />
-              </Button>
-            )}
             <Button onClick={handleSave} size="sm" className="gap-1">
               <Save className="h-4 w-4" />
               <span>Save</span>
@@ -130,16 +110,17 @@ export function NoteEditor({
         )}
       </CardHeader>
       <CardContent className="p-0 flex-grow">
-        <ScrollArea className="h-full">
+        <ScrollArea className="h-full flex gap-4">
           <Textarea
             placeholder="Start typing your markdown note..."
             value={content}
-            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-              setContent(e.target.value)
-            }
-            className="h-full w-full resize-none border-0 rounded-none p-4 focus-visible:ring-0 text-base min-h-[calc(100vh-250px)]"
+            onChange={(e) => setContent(e.target.value)}
+            className="h-full w-1/2 resize-none border-0 rounded-none p-4 focus-visible:ring-0 text-base min-h-[calc(100vh-250px)]"
             aria-label="Note content"
           />
+          <div className="w-1/2 p-4 border-l overflow-auto prose prose-sm dark:prose-invert text-muted-foreground">
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
         </ScrollArea>
       </CardContent>
     </Card>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { Note } from "@/types";
+import ReactMarkdown from "react-markdown";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -111,7 +112,7 @@ export function NoteListItem({
             className="h-7 w-7 text-muted-foreground hover:text-destructive"
             onClick={(e: any) => {
               e.stopPropagation(); // Prevent card click when deleting
-             note.id && onDeleteNote(note.id);
+              note.id && onDeleteNote(note.id);
             }}
             aria-label={`Delete note ${note.title || "Untitled Note"}`}
           >
@@ -123,9 +124,19 @@ export function NoteListItem({
         </CardDescription>
       </CardHeader>
       <CardContent className="px-4 pb-3">
-        <p className="text-sm text-muted-foreground break-words line-clamp-2">
-          {contentSnippet}
-        </p>
+        <ReactMarkdown
+          components={{
+            p: ({ node, ...props }) => (
+              <p
+                className="prose prose-sm dark:prose-invert text-muted-foreground line-clamp-2"
+                {...props}
+              />
+            ),
+          }}
+        >
+          {note.content.substring(0, 150)}
+        </ReactMarkdown>
+
         <div className="mt-2 flex justify-end">
           <Badge
             variant={statusProps.variant}

@@ -16,11 +16,11 @@ export default function HomePage() {
     setSearchTerm,
     handleNewNote,
     handleSelectNote,
-    handleSaveNote,
     handleDeleteNote,
-    isMobile, // Now available from context
+    isMobile,
 
-    handleCloseEditor, 
+    handleCloseEditor,
+    handleSaveOrUpdateNote,
   } = useNotes();
 
   return (
@@ -32,48 +32,24 @@ export default function HomePage() {
         isOnline={isOnline}
       />
       <main className="flex flex-1 overflow-hidden">
-        {isMobile ? (
-          activeMobileView === "list" ? (
-            <NoteList
-              notes={notes}
-              selectedNoteId={selectedNoteId}
-              onSelectNote={handleSelectNote}
-              onDeleteNote={handleDeleteNote}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm} // Pass setSearchTerm to NoteList for its mobile search bar
-              className="w-full h-full"
-            />
-          ) : (
-            <NoteEditor
-              note={currentNote}
-              onSaveNote={handleSaveNote}
-              onDeleteNote={handleDeleteNote}
-              selectedNoteId={selectedNoteId}
-              className="w-full h-full"
-            />
-          )
-        ) : (
-          <>
-            <NoteList
-              notes={notes}
-              selectedNoteId={selectedNoteId}
-              onSelectNote={handleSelectNote}
-              onDeleteNote={handleDeleteNote}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              className="w-1/3 lg:w-1/4 border-r h-full"
-            />
-            <NoteEditor
-              note={currentNote}
-              onSaveNote={handleSaveNote}
-              onDeleteNote={handleDeleteNote}
-              selectedNoteId={selectedNoteId}
-
-              handleCloseEditor={handleCloseEditor}
-              className="flex-1 h-full"
-            />
-          </>
-        )}
+        <>
+          <NoteList
+            notes={notes}
+            selectedNoteId={selectedNoteId}
+            onSelectNote={handleSelectNote}
+            onDeleteNote={handleDeleteNote}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            className="w-1/3 lg:w-1/4 border-r h-full"
+          />
+          <NoteEditor
+            note={currentNote}
+            handleSaveOrUpdateNote={handleSaveOrUpdateNote}
+            selectedNoteId={selectedNoteId}
+            handleCloseEditor={handleCloseEditor}
+            className="flex-1 h-full"
+          />
+        </>
       </main>
     </div>
   );

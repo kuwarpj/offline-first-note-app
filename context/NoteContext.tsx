@@ -24,9 +24,9 @@ interface NotesContextType {
   setSearchTerm: (term: string) => void;
   handleNewNote: () => void;
   handleSelectNote: (id: string) => void;
-  handleSaveNote: (noteToSave: Note) => void;
   handleDeleteNote: (id: string) => void;
   handleCloseEditor: () => void;
+  handleSaveOrUpdateNote: any;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -78,19 +78,28 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
     getAllNotes();
   }, []);
 
-  const handleSaveNote = useCallback(async (noteToSave: Note) => {
-    console.log("This is note to save", noteToSave);
+  const handleSaveOrUpdateNote = useCallback(async (noteToSave: Note) => {
     try {
       const body = {
-        title: noteToSave?.title,
-        content: noteToSave?.content,
+        title: noteToSave.title,
+        content: noteToSave.content,
         synced: true,
       };
 
-      const res = await ApiRequest("/api/v1/note/createnote", "POST", body);
+      let res;
+      if (noteToSave.id) {
+        // Update existing note
+        res = await ApiRequest(`/api/v1/note/${noteToSave.id}`, "PUT", body);
+      } else {
+        // Create new note
+        res = await ApiRequest("/api/v1/note/createnote", "POST", body);
+      }
+
       if (res?.statusCode === 200) {
-        toast("Note Created", {
-          description: `"Note has been Created Successfully.`,
+        toast(noteToSave.id ? "Note Updated" : "Note Created", {
+          description: `Note has been ${
+            noteToSave.id ? "updated" : "created"
+          } successfully.`,
           duration: 3000,
           className: "bg-red-500 text-white",
         });
@@ -99,7 +108,9 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         setSelectedNoteId(null);
         setCurrentNote(null);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error(error);
+    }
   }, []);
 
   //function to delete the note
@@ -140,11 +151,11 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         isMobile,
         activeMobileView,
         setSearchTerm,
-        handleSaveNote,
         handleDeleteNote,
         handleSelectNote,
         currentNote,
-        handleNewNote
+        handleNewNote,
+        handleSaveOrUpdateNote,
       }}
     >
       {children}
