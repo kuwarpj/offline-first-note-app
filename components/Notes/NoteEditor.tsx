@@ -2,7 +2,7 @@
 "use client";
 
 import type { ChangeEvent } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { format } from "date-fns";
 import { Note } from "@/types";
+import { useDebounce } from "@/lib/utils";
 
 interface NoteEditorProps {
   note: Note | null | undefined;
@@ -43,7 +44,25 @@ export function NoteEditor({
     }
   }, [note]);
 
+  // Debounced save function, 500ms delay
+  const autosave = useCallback(
+    (newTitle: string, newContent: string) => {
+      if (!note) return;
+      handleSaveOrUpdateNote({
+        id: note.id,
+        title: newTitle,
+        content: newContent,
+        synced: note.synced || "unsynced",
+      });
+      setLastSaved(new Date().toISOString());
+    },
+    [note, handleSaveOrUpdateNote]
+  );
+
+  const debouncedSave = useDebounce(autosave, 4000);
+
   const handleSave = () => {
+    debouncedSave.cancel();
     handleSaveOrUpdateNote({
       id: note?.id,
       title,
@@ -90,9 +109,10 @@ export function NoteEditor({
           <Input
             placeholder="Note Title"
             value={title}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
-              setTitle(e.target.value)
-            }
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              setTitle(e.target.value);
+              debouncedSave(e.target.value, content);
+            }}
             className="text-xl font-semibold border-0 shadow-none focus-visible:ring-0 flex-grow !p-0"
             aria-label="Note title"
           />
@@ -114,7 +134,10 @@ export function NoteEditor({
           <Textarea
             placeholder="Start typing your markdown note..."
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => {
+              setContent(e.target.value);
+              debouncedSave(title, e.target.value);
+            }}
             className="h-full w-1/2 resize-none border-0 rounded-none p-4 focus-visible:ring-0 text-base min-h-[calc(100vh-250px)]"
             aria-label="Note content"
           />

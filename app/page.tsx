@@ -11,13 +11,11 @@ export default function HomePage() {
     selectedNoteId,
     searchTerm,
     isOnline,
-    activeMobileView,
     currentNote,
     setSearchTerm,
     handleNewNote,
     handleSelectNote,
     handleDeleteNote,
-    isMobile,
 
     handleCloseEditor,
     handleSaveOrUpdateNote,
@@ -29,7 +27,6 @@ export default function HomePage() {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onNewNote={handleNewNote}
-        isOnline={isOnline}
       />
       <main className="flex flex-1 overflow-hidden">
         <>

@@ -21,8 +21,10 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "../ui/button";
 
-const getStatusProps = (status: Note["synced"]) => {
-  switch (status) {
+const getStatusProps = (status: Note["synced"] | boolean) => {
+  const normalizedStatus = status === true ? "synced" : status;
+
+  switch (normalizedStatus) {
     case "synced":
       return {
         icon: <CheckCircle2 className="h-4 w-4 text-green-500" />,
@@ -60,6 +62,7 @@ const getStatusProps = (status: Note["synced"]) => {
       };
   }
 };
+
 
 export function NoteListItem({
   note,
