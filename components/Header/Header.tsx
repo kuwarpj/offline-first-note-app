@@ -10,27 +10,15 @@ interface HeaderProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onNewNote: () => void;
+  isOnline: Boolean
 }
 
 export const AppHeader: FC<HeaderProps> = ({
   searchTerm,
   onSearchChange,
   onNewNote,
+  isOnline
 }) => {
-  const [isOnline, setIsOnline] = useState<boolean>(
-    typeof navigator !== "undefined" ? navigator.onLine : true
-  );
-
-  useEffect(() => {
-    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
-    return () => {
-      window.removeEventListener("online", updateOnlineStatus);
-      window.removeEventListener("offline", updateOnlineStatus);
-    };
-  }, []);
-
   return (
     <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-10">
       <div className="flex items-center gap-2">
