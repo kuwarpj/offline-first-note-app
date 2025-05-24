@@ -89,8 +89,8 @@ export function NoteListItem({
 
   return (
     <Card
-      className={`mb-3 cursor-pointer transition-all duration-200 ease-in-out hover:shadow-md ${
-        isSelected ? "ring-2 ring-primary shadow-lg" : "shadow-sm"
+      className={`mb-3 cursor-pointer hover:shadow-md ${
+        isSelected ? " border-2 border-[green] shadow-lg" : "shadow-sm"
       }`}
       onClick={() => note.id && onSelectNote(note.id)}
       onKeyDown={(e) => e.key === "Enter" && note.id && onSelectNote(note.id)}
