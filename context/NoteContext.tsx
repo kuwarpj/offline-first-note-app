@@ -90,6 +90,23 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
 
   //Function to open a a new note modal and add it to UI immediately in Sidebar
   const handleNewNote = () => {
+    //Case to prevent multiple unsaved note  creations
+    const handleUnsavedNotes = notes.some(
+      (note) =>
+        note?.id &&
+        note?.id.startsWith("offline-") &&
+        note.title.trim() === "" &&
+        note.content.trim() === ""
+    );
+
+    if (handleUnsavedNotes) {
+      toast("Note already open", {
+        description:
+          "Finish or discard the current note before creating a new one.",
+      });
+      return;
+    }
+
     const newNote: Note = {
       id: `offline-${Date.now()}`,
       title: "",
@@ -97,6 +114,7 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
       updatedAt: new Date().toISOString(),
       synced: "unsynced",
     };
+
     setNotes((prev) => [newNote, ...prev]);
     setCurrentNote(newNote);
   };
@@ -190,9 +208,6 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         }
       } catch (err) {
         console.error("Sync failed:", id, err);
-        setNotes((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, synced: "error" } : n))
-        );
       }
     });
 
@@ -207,20 +222,19 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
 
     await Promise.all([...syncTasks, ...deleteTasks]);
 
-    // Clear local notes
+    // Clear Local changes and show toast
     if (offlineNotes.length) await clearNotesByStatus("offline");
     if (deletedNotes.length) await clearNotesByStatus("deleted");
 
-    // Show separate toasts
     if (offlineNotes.length) {
       toast("Notes Synced", {
-        description: "Offline notes synced to the cloud.",
+        description: "Offline notes synced to the server.",
       });
     }
 
     if (deletedNotes.length) {
       toast("Notes Deleted", {
-        description: "Deleted notes synced to the cloud.",
+        description: "Deleted notes synced with the server.",
       });
     }
   }, []);
