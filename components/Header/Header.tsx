@@ -54,9 +54,9 @@ export const AppHeader: FC<HeaderProps> = ({
         </div>
         <Button
           onClick={onNewNote}
-          variant="outline"
+         
           size="sm"
-          className="gap-1"
+          className="gap-1 cursor-pointer"
         >
           <PlusCircle className="h-4 w-4" />
           <span className="hidden sm:inline">New Note</span>
