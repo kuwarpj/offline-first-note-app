@@ -23,10 +23,8 @@ export const AppHeader: FC<HeaderProps> = ({
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-
     window.addEventListener("online", updateOnlineStatus);
     window.addEventListener("offline", updateOnlineStatus);
-
     return () => {
       window.removeEventListener("online", updateOnlineStatus);
       window.removeEventListener("offline", updateOnlineStatus);
@@ -36,9 +34,8 @@ export const AppHeader: FC<HeaderProps> = ({
   return (
     <header className="flex items-center justify-between p-4 border-b bg-card shadow-sm sticky top-0 z-10">
       <div className="flex items-center gap-2">
-        {/* <LogoIcon className="h-8 w-8 text-primary" /> */}
         <h1 className="text-xl font-semibold text-foreground">
-          Offline Notes Sync
+          Offline First Note App
         </h1>
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
@@ -55,15 +52,30 @@ export const AppHeader: FC<HeaderProps> = ({
             aria-label="Search notes"
           />
         </div>
-        <Button onClick={onNewNote} variant="outline" size="sm" className="gap-1">
+        <Button
+          onClick={onNewNote}
+          variant="outline"
+          size="sm"
+          className="gap-1"
+        >
           <PlusCircle className="h-4 w-4" />
           <span className="hidden sm:inline">New Note</span>
         </Button>
         <div title={isOnline ? "Online" : "Offline"}>
           {isOnline ? (
-            <Wifi className="h-6 w-6 text-green-500" />
+            <div className="flex flex-col items-center justify-center">
+              <Wifi className="h-6 w-6 text-green-500 " />
+              <span className="font-semibold text-green-500 text-[14px]">
+                Online
+              </span>
+            </div>
           ) : (
-            <WifiOff className="h-6 w-6 text-destructive" />
+            <div className="flex flex-col items-center justify-center ">
+              <WifiOff className="h-6 w-6 text-destructive" />
+              <span className="font-semibold text-destructive text-[14px]">
+                Offline
+              </span>
+            </div>
           )}
         </div>
       </div>
