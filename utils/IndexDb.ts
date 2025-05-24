@@ -15,7 +15,7 @@ interface NotesDB extends DBSchema {
 }
 
 const DB_NAME = 'notes-db';
-const DB_VERSION = 2;    // <-- bump version to trigger upgrade
+const DB_VERSION = 2;   
 const STORE_NOTES = 'notes';
 
 export const initDB = () =>
@@ -40,16 +40,12 @@ export const getNotesByStatus = async (status: NoteStatus): Promise<NoteWithStat
   return allNotes.filter(note => note.status === status);
 };
 
-// Clear all notes with a given status
-export const clearNotesByStatus = async (status: NoteStatus) => {
+
+//Cler notes from indexDb using Id
+export async function deleteNoteFromIndexedDb(id?: string) {
+  if(!id) return
   const db = await initDB();
-  const tx = db.transaction(STORE_NOTES, 'readwrite');
-  const store = tx.objectStore(STORE_NOTES);
-  const allNotes = await store.getAll();
-  for (const note of allNotes) {
-    if (note.status === status && note.id !== undefined) {
-      await store.delete(note.id);
-    }
-  }
+  const tx = db.transaction("notes", "readwrite");
+  tx.store.delete(id);
   await tx.done;
-};
+}

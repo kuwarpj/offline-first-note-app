@@ -4,7 +4,7 @@ import { showToast } from "@/lib/utils";
 import type { Note } from "@/types";
 import { ApiRequest } from "@/utils/ApiRequest";
 import {
-  clearNotesByStatus,
+  deleteNoteFromIndexedDb,
   getNotesByStatus,
   saveNote,
 } from "@/utils/IndexDb";
@@ -163,8 +163,7 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         : await ApiRequest("/api/v1/note/createnote", "POST", body);
 
       if (res?.statusCode === 200) {
-        const offlineNotes = await getNotesByStatus("offline");
-        if (offlineNotes.length) await clearNotesByStatus("offline");
+        await deleteNoteFromIndexedDb(note?.id);
         if (!isExisting) {
           handleCloseEditor();
         }
@@ -213,6 +212,7 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
                 : n
             )
           );
+          await deleteNoteFromIndexedDb(note?.id);
         }
       } catch (err) {
         console.error("Sync failed:", id, err);
@@ -223,16 +223,15 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
     const deleteTasks = deletedNotes.map(async (note) => {
       try {
         await ApiRequest(`/api/v1/note/${note.id}`, "DELETE");
+        if (note.id) {
+          await deleteNoteFromIndexedDb(note.id);
+        }
       } catch (err) {
         console.error("Delete failed:", note.id, err);
       }
     });
 
     await Promise.all([...syncTasks, ...deleteTasks]);
-
-    // Clear Local changes and show toast
-    if (offlineNotes.length) await clearNotesByStatus("offline");
-    if (deletedNotes.length) await clearNotesByStatus("deleted");
 
     if (offlineNotes.length) {
       showToast(
