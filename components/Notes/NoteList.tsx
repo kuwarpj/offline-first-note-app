@@ -26,6 +26,7 @@ export function NoteList({
   onSearchChange,
   className,
 }: NoteListProps) {
+  
   const filteredNotes = notes
     .filter(
       (note) =>
@@ -47,7 +48,7 @@ export function NoteList({
             type="search"
             placeholder="Search notes..."
             value={searchTerm}
-            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+            onChange={(e: any) =>
               onSearchChange(e.target.value)
             }
             className="pl-8 pr-2 py-1 h-9 rounded-lg"

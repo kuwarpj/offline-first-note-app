@@ -10,7 +10,6 @@ export default function HomePage() {
     notes,
     selectedNoteId,
     searchTerm,
-    isOnline,
     currentNote,
     setSearchTerm,
     handleNewNote,

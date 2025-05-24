@@ -98,7 +98,7 @@ export function NoteListItem({
       aria-selected={isSelected}
       role="listitem"
     >
-      <CardHeader className="pb-2 pt-4 px-4">
+      <CardHeader className="pb-2 pt-1 px-4">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-medium leading-tight">
             {note.title || "Untitled Note"}
@@ -106,7 +106,7 @@ export function NoteListItem({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               note.id && onDeleteNote(note.id);
@@ -131,7 +131,7 @@ export function NoteListItem({
             ),
           }}
         >
-          {note.content.substring(0, 150)}
+          {note.content}
         </ReactMarkdown>
 
         <div className="mt-2 flex justify-end">
