@@ -14,23 +14,46 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+## 📦 Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Frontend
 
-## Deploy on Vercel
+- **Next** (with Context Api)
+- **TypeScript**
+- **IndexedDB** (via `idb`)
+- **Shadcn UI**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Backend
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Node**
+- **Express**
+- **MongoDB**
+
+---
+
+
+Design Decisions & Tradeoffs
+
+## Offline-First Architecture
+
+The app uses IndexedDB to persist notes locally, allowing complete offline operation. 
+
+## Status-Based Note Management
+Notes are tagged with statuses such as synced, unsynced and Error, allowing us to handle synchronization more intelligently when the network is restored.
+
+## Simple Conflict Resolution (Currently Missing)
+
+No complex conflict resolution is currently implemented. The app assumes that the local changes are always correct and pushes them to the server once back online.
+
+## Smart Sync Logic
+Notes created or edited offline are synced via POST or PUT requests.
+Notes marked as deleted offline are removed from the server via DELETE calls.
+Notes created offline use a temporary ID prefixed with offline-.
+If a note is created and then deleted offline, it will not be synced to the server.
+
+
