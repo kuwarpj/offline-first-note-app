@@ -98,7 +98,6 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         note.title.trim() === "" &&
         note.content.trim() === ""
     );
-
     if (handleUnsavedNotes) {
       toast("Note already open", {
         description:
@@ -163,6 +162,9 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         : await ApiRequest("/api/v1/note/createnote", "POST", body);
 
       if (res?.statusCode === 200) {
+        if (!isExisting) {
+          handleCloseEditor();
+        }
         init();
         toast(isExisting ? "Note Updated" : "Note Created", {
           description: "Saved successfully.",

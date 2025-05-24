@@ -54,7 +54,6 @@ export function NoteEditor({
         content: newContent,
         synced: note.synced || "unsynced",
       });
-      handleCloseEditor?.();
       setLastSaved(new Date().toISOString());
     },
     [note, handleSaveOrUpdateNote]
@@ -70,7 +69,6 @@ export function NoteEditor({
       content,
       synced: note?.synced || "unsynced",
     });
-    handleCloseEditor?.();
   };
 
   // Show a fallback UI if no note is selected
