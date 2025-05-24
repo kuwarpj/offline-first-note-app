@@ -1,5 +1,6 @@
 "use client";
 
+import { showToast } from "@/lib/utils";
 import type { Note } from "@/types";
 import { ApiRequest } from "@/utils/ApiRequest";
 import {
@@ -143,7 +144,7 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
 
     await saveNote(noteToSave, "offline");
     if (offline) {
-      toast("Saved Offline", { description: "Note will sync later." });
+      showToast("Saved Offline", "Note will sync later.", "warning");
       return;
     }
 
@@ -169,9 +170,11 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         }
 
         init();
-        toast(isExisting ? "Note Updated" : "Note Created", {
-          description: "Saved successfully.",
-        });
+        showToast(
+          isExisting ? "Note Updated" : "Note Created",
+          "Saved successfully.",
+          "success"
+        );
       }
     } catch (error) {
       console.error("Failed to sync note:", error);
@@ -232,15 +235,19 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
     if (deletedNotes.length) await clearNotesByStatus("deleted");
 
     if (offlineNotes.length) {
-      toast("Notes Synced", {
-        description: "Offline notes synced to the server.",
-      });
+      showToast(
+        "Notes Synced",
+        "Offline notes synced to the server.",
+        "success"
+      );
     }
 
     if (deletedNotes.length) {
-      toast("Notes Deleted", {
-        description: "Deleted notes synced with the server.",
-      });
+      showToast(
+        "Notes Deleted",
+        "Deleted notes synced with the server.",
+        "error"
+      );
     }
   }, []);
 
@@ -280,7 +287,7 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         setSelectedNoteId(null);
         setCurrentNote(null);
       }
-      toast("Deleted", { description: "Note deleted." });
+      showToast("Deleted", "Note deleted.", "error");
     },
     [notes, selectedNoteId]
   );
