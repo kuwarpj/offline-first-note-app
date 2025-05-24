@@ -54,6 +54,7 @@ export function NoteEditor({
         content: newContent,
         synced: note.synced || "unsynced",
       });
+      handleCloseEditor?.();
       setLastSaved(new Date().toISOString());
     },
     [note, handleSaveOrUpdateNote]
@@ -61,14 +62,15 @@ export function NoteEditor({
 
   const debouncedSave = useDebounce(autosave, 4000);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     debouncedSave.cancel();
-    handleSaveOrUpdateNote({
+    await handleSaveOrUpdateNote({
       id: note?.id,
       title,
       content,
       synced: note?.synced || "unsynced",
     });
+    handleCloseEditor?.();
   };
 
   // Show a fallback UI if no note is selected
