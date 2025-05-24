@@ -141,8 +141,8 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
       return [noteToSave, ...prev];
     });
 
+    await saveNote(noteToSave, "offline");
     if (offline) {
-      await saveNote(noteToSave, "offline");
       toast("Saved Offline", { description: "Note will sync later." });
       return;
     }
@@ -162,9 +162,12 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         : await ApiRequest("/api/v1/note/createnote", "POST", body);
 
       if (res?.statusCode === 200) {
+        const offlineNotes = await getNotesByStatus("offline");
+        if (offlineNotes.length) await clearNotesByStatus("offline");
         if (!isExisting) {
           handleCloseEditor();
         }
+
         init();
         toast(isExisting ? "Note Updated" : "Note Created", {
           description: "Saved successfully.",

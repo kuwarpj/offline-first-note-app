@@ -51,7 +51,7 @@ const getStatusProps = (status: Note["synced"] | boolean) => {
         icon: <XCircle className="h-4 w-4 text-red-500" />,
         text: "Error",
         variant: "destructive" as const,
-        colorClass: "border-red-500 text-red-600",
+        colorClass: "border-red-500 text-white",
       };
     default:
       return {
