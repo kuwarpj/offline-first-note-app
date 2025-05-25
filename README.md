@@ -41,19 +41,23 @@ Design Decisions & Tradeoffs
 
 ## Offline-First Architecture
 
-The app uses IndexedDB to persist notes locally, allowing complete offline operation. 
+The app uses IndexedDB (Idb) to persist notes locally, allowing complete offline operation. 
 
 ## Status-Based Note Management
-Notes are tagged with statuses such as synced, unsynced and Error, allowing us to handle synchronization when the network is restored.
+Notes are tagged with statuses such as synced, syncing,  unsynced and Error, allowing us to handle synchronization when the network is restored.
 
 ## Simple Conflict Resolution (Currently Missing)
 
-No complex conflict resolution is currently implemented. The app assumes that the local changes are always correct and pushes them to the server once back online.
+Conflict resolution UI to manually resolve sync conflicts is mIssing
 
 ## Smart Sync Logic
-Notes created or edited offline are synced via POST or PUT requests.
-Notes marked as deleted offline are removed from the server via DELETE calls.
-Notes created offline use a temporary ID prefixed with offline-.
-If a note is created offline and then deleted offline, it will not be synced to the server.
+- Notes created or edited offline are synced via POST or PUT requests when app detect network status is online.
+- Notes marked as deleted offline are removed from the server via DELETE calls when netwrok status is online.
+- Notes created offline use a temporary ID prefixed with offline-.
+- If a note is created offline and then deleted offline, it will not be synced to the server.
+- Added Search Filter to Filter the notes from the sidebar using title and descriptions.
+- Notes created, Updated and deleted offline are stored in Idb and show in category in Ui and once app detect the netwrok it synced the data with server and clear the indexDb.
+- 
+
 
 
