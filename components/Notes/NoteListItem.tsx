@@ -85,6 +85,7 @@ export function NoteListItem({
         addSuffix: true,
       });
     } catch (error) {
+      console.log(error);
       return "Invalid date";
     }
   }, [note.updatedAt]);
@@ -97,7 +98,7 @@ export function NoteListItem({
       onClick={() => note.id && onSelectNote(note.id)}
       onKeyDown={(e) => e.key === "Enter" && note.id && onSelectNote(note.id)}
       tabIndex={0}
-      aria-selected={isSelected}
+      // aria-selected={isSelected}
       role="listitem"
     >
       <CardHeader className="pb-2 pt-1 px-4">
@@ -111,9 +112,11 @@ export function NoteListItem({
             className="h-7 w-7 text-muted-foreground hover:text-destructive cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
-              note.id && onDeleteNote(note.id);
+              if (note.id) {
+                onDeleteNote(note.id);
+              }
             }}
-            aria-label={`Delete note ${note.title || "Untitled Note"}`}
+          
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -125,7 +128,7 @@ export function NoteListItem({
       <CardContent className="px-4 pb-3">
         <ReactMarkdown
           components={{
-            p: ({ node, ...props }) => (
+            p: ({ ...props }) => (
               <p
                 className="prose prose-sm dark:prose-invert text-muted-foreground line-clamp-2"
                 {...props}

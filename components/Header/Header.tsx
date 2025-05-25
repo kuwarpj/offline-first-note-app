@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FC } from "react";
+import {  type ChangeEvent, type FC } from "react";
 import { Wifi, WifiOff, Search, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ interface HeaderProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   onNewNote: () => void;
-  isOnline: Boolean
+  isOnline: boolean
 }
 
 export const AppHeader: FC<HeaderProps> = ({

@@ -5,7 +5,7 @@ import { NoteListItem } from "./NoteListItem";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useState} from "react";
 import { getNotesByStatus } from "@/utils/IndexDb";
 import { Badge } from "../ui/badge";
 
@@ -17,7 +17,7 @@ interface NoteListProps {
   searchTerm: string;
   onSearchChange: (term: string) => void;
   className?: string;
-  isOnline: Boolean;
+  isOnline: boolean;
 }
 
 export function NoteList({
@@ -75,7 +75,7 @@ export function NoteList({
       {!isOnline && (
         <>
           <span className="font-medium px-2 py-2 text-xs text-start text-orange-400">
-            Your notes will sync automatically when you're online.
+            Your notes will sync automatically when you are online.
           </span>
           <div className="p-2 border-b bg-muted flex gap-2 text-sm justify-center items-center ">
             <Badge variant="outline">
@@ -106,7 +106,7 @@ export function NoteList({
       <ScrollArea className="flex-grow min-h-0 p-1 sm:p-4">
         {filteredNotes.length === 0 && searchTerm && (
           <p className="text-center text-muted-foreground mt-4">
-            No notes found for "{searchTerm}".
+            No notes found for {searchTerm}.
           </p>
         )}
         {filteredNotes.length === 0 && !searchTerm && (

@@ -44,7 +44,7 @@ Design Decisions & Tradeoffs
 The app uses IndexedDB to persist notes locally, allowing complete offline operation. 
 
 ## Status-Based Note Management
-Notes are tagged with statuses such as synced, unsynced and Error, allowing us to handle synchronization more intelligently when the network is restored.
+Notes are tagged with statuses such as synced, unsynced and Error, allowing us to handle synchronization when the network is restored.
 
 ## Simple Conflict Resolution (Currently Missing)
 
@@ -54,6 +54,6 @@ No complex conflict resolution is currently implemented. The app assumes that th
 Notes created or edited offline are synced via POST or PUT requests.
 Notes marked as deleted offline are removed from the server via DELETE calls.
 Notes created offline use a temporary ID prefixed with offline-.
-If a note is created and then deleted offline, it will not be synced to the server.
+If a note is created offline and then deleted offline, it will not be synced to the server.
 
 
