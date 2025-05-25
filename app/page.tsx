@@ -18,7 +18,8 @@ export default function HomePage() {
 
     handleCloseEditor,
     handleSaveOrUpdateNote,
-    isOnline
+    isOnline,
+    syncingNotes
   } = useNotes();
 
   return (

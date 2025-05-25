@@ -31,6 +31,7 @@ interface NotesContextType {
   handleDeleteNote: (id: string) => void;
   handleCloseEditor: () => void;
   handleSaveOrUpdateNote: (note: Note) => void;
+  syncingNotes: any;
 }
 
 const NotesContext = createContext<NotesContextType | undefined>(undefined);
@@ -45,6 +46,7 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
     typeof window !== "undefined" && navigator ? navigator.onLine : true
   );
   const [currentNote, setCurrentNote] = useState<Note | null | undefined>(null);
+  const [syncingNotes, setSyncingNotes] = useState<(string | undefined)[]>([]);
 
   //Init function to get all the note of indexDb if present
   const init = async () => {
@@ -148,7 +150,6 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
       return;
     }
 
-    console.log("This is Note", note);
     //If online sync note to server on save
     try {
       const body = {
@@ -187,6 +188,10 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
   const syncOfflineNotes = useCallback(async () => {
     const offlineNotes = await getNotesByStatus("offline");
     const deletedNotes = await getNotesByStatus("deleted");
+
+    // Collection notes id to show syncing process during api call
+    const syncingIds = offlineNotes.map((note) => note.id);
+    setSyncingNotes(syncingIds);
 
     // Sync offline notes (create or update)
     const syncTasks = offlineNotes.map(async (note: Note) => {
@@ -232,6 +237,8 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
     });
 
     await Promise.all([...syncTasks, ...deleteTasks]);
+    //clear the state when operations is done 
+    setSyncingNotes([]);
 
     if (offlineNotes.length) {
       showToast(
@@ -269,24 +276,33 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
   //function to delete note and save to deleted note to indexdb if action is perfom in offline mode
   const handleDeleteNote = useCallback(
     async (id: string) => {
+      const noteToDelete = notes.find((n) => n.id === id);
+
       if (!navigator.onLine) {
-        // Mark as deleted offline
-        const noteToDelete = notes.find((n) => n.id === id);
         if (noteToDelete) {
-          await saveNote(noteToDelete, "deleted");
+          if (id.startsWith("offline-")) {
+            await deleteNoteFromIndexedDb(id);
+            console.log("Deleted offline-created note:", id);
+          } else {
+            await saveNote(noteToDelete, "deleted");
+            showToast("Deleted", "Note deleted Offline.", "error");
+          }
         }
       } else {
         if (!id.startsWith("offline-")) {
-          await ApiRequest(`/api/v1/note/${id}`, "DELETE");
+          const res = await ApiRequest(`/api/v1/note/${id}`, "DELETE");
+          if (res?.statusCode === 200) {
+            showToast("Deleted", "Note deleted.", "error");
+          }
         }
       }
 
+      // Update UI state
       setNotes((prev) => prev.filter((n) => n.id !== id));
       if (selectedNoteId === id) {
         setSelectedNoteId(null);
         setCurrentNote(null);
       }
-      showToast("Deleted", "Note deleted.", "error");
     },
     [notes, selectedNoteId]
   );
@@ -317,6 +333,7 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
         handleDeleteNote,
         handleCloseEditor,
         handleSaveOrUpdateNote,
+        syncingNotes,
       }}
     >
       {children}

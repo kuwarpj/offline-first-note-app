@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Button } from "../ui/button";
+import { useNotes } from "@/context/NoteContext";
 
 const getStatusProps = (status: Note["synced"] | boolean) => {
   const normalizedStatus = status === true ? "synced" : status;
@@ -63,7 +64,6 @@ const getStatusProps = (status: Note["synced"] | boolean) => {
   }
 };
 
-
 export function NoteListItem({
   note,
   isSelected,
@@ -75,7 +75,9 @@ export function NoteListItem({
   onSelectNote: (id: string) => void;
   onDeleteNote: (id: string) => void;
 }) {
-  const statusProps = getStatusProps(note.synced);
+  const { syncingNotes } = useNotes();
+  const isSyncing = syncingNotes.includes(note.id);
+  const statusProps = getStatusProps(isSyncing ? "syncing" : note.synced);
 
   const timeAgo = React.useMemo(() => {
     try {
