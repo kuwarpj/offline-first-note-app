@@ -49,48 +49,53 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
   const [syncingNotes, setSyncingNotes] = useState<(string | undefined)[]>([]);
 
   //Init function to get all the note of indexDb if present
-  const init = async () => {
-    const offlineNotes = await getNotesByStatus("offline");
-    const formattedOffline = offlineNotes.map((n) => ({
-      ...n,
-      synced: "unsynced" as const,
-    }));
+    const init = async () => {
+      const offlineNotes = await getNotesByStatus("offline");
+      const formattedOffline = offlineNotes.map((n) => ({
+        ...n,
+        synced: "unsynced" as const,
+      }));
 
-    setNotes(formattedOffline);
+      setNotes((prev) => {
+        const existingIds = new Set(prev.map((n) => n.id));
+        const newOfflineNotes = formattedOffline.filter(
+          (n) => !existingIds.has(n.id)
+        );
+        return [...prev, ...newOfflineNotes];
+      });
+      // Get the onlien notes from the server
+      if (isOnline) {
+        try {
+          const res = await ApiRequest("/api/v1/note/getnotes", "GET");
+          if (res?.statusCode === 200) {
+            const serverNotes = res.data.map((note: any) => ({
+              id: note._id,
+              title: note.title,
+              content: note.content,
+              updatedAt: note.updatedAt,
+              synced: "synced" as const,
+            }));
 
-    // Get the onlien notes from the server
-    if (isOnline) {
-      try {
-        const res = await ApiRequest("/api/v1/note/getnotes", "GET");
-        if (res?.statusCode === 200) {
-          const serverNotes = res.data.map((note: any) => ({
-            id: note._id,
-            title: note.title,
-            content: note.content,
-            updatedAt: note.updatedAt,
-            synced: "synced" as const,
-          }));
-
-          // Merge ofline notes and Server notes in state to render in Ui
-          setNotes((prev) => {
-            const offlineIds = new Set(
-              prev.filter((n) => n.synced !== "synced").map((n) => n.id)
-            );
-            const filteredServerNotes = serverNotes.filter(
-              (sn: any) => !offlineIds.has(sn.id)
-            );
-            return [...filteredServerNotes, ...prev];
-          });
+            // Merge ofline notes and Server notes in state to render in Ui
+            setNotes((prev) => {
+              const existingIds = new Set(prev.map((n) => n.id));
+              const newServerNotes = serverNotes.filter(
+                (sn: any) => !existingIds.has(sn.id)
+              );
+              return [...prev, ...newServerNotes];
+            });
+          }
+        } catch (error) {
+          console.error("Failed to fetch notes from server:", error);
         }
-      } catch (error) {
-        console.error("Failed to fetch notes from server:", error);
       }
-    }
-  };
-  useEffect(() => {
-    init();
-  }, []);
+    };
+    useEffect(() => {
+      init();
+    }, []);
 
+
+    
   //Function to open a a new note modal and add it to UI immediately in Sidebar
   const handleNewNote = () => {
     //Case to prevent multiple unsaved note  creations
@@ -169,7 +174,12 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
           handleCloseEditor();
         }
 
-        init();
+        setNotes((prev) =>
+          prev.map((n) =>
+            n.id === id ? { ...n, synced: "synced", id: res?.data?._id || id } : n
+          )
+        );
+
         showToast(
           isExisting ? "Note Updated" : "Note Created",
           "Saved successfully.",
@@ -237,7 +247,7 @@ export const NotesProvider: React.FC<{ children: ReactNode }> = ({
     });
 
     await Promise.all([...syncTasks, ...deleteTasks]);
-    //clear the state when operations is done 
+    //clear the state when operations is done
     setSyncingNotes([]);
 
     if (offlineNotes.length) {
